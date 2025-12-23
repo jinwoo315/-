@@ -46,6 +46,7 @@ import cv2
 import re
 import json
 from pathlib import Path
+from openpyxl import Workbook, load_workbook
  
 
 # pyzbar: zbar 라이브러리 래퍼 — 바코드 디코딩
@@ -63,6 +64,33 @@ def load_mappings():
     return {}
 
 MAPPINGS = load_mappings()
+
+EXCEL_PATH = Path(__file__).parent / "scans.xlsx"
+
+def init_excel(path=EXCEL_PATH):
+    """엑셀 파일이 없으면 만들고, 헤더를 넣습니다."""
+    if not path.exists():
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Scans"
+        ws.append(["timestamp", "type", "data", "label"])
+        wb.save(path)
+
+def append_excel(ts, typ, data, label, path=EXCEL_PATH):
+    """엑셀에 한 줄 추가합니다."""
+    wb = load_workbook(path)
+    ws = wb.active
+    ws.append([ts, typ, data, label])
+    wb.save(path)
+
+def reset_excel(path=EXCEL_PATH):
+    """엑셀을 완전 초기화(헤더만 남김)합니다."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Scans"
+    ws.append(["timestamp", "type", "data", "label"])
+    wb.save(path)
+
 
 
 def decode_and_annotate(frame):
@@ -126,6 +154,7 @@ def main(camera_index=0, beep=True, debug=False):
 
     seen = set()
     frame_count = 0
+    init_excel()
     try:
         while True:
             # 프레임 읽기
@@ -146,6 +175,11 @@ def main(camera_index=0, beep=True, debug=False):
                     seen.add(label)
                     ts = time.strftime('%Y-%m-%d %H:%M:%S')
                     print(f"[{ts}] {label}")
+                    mapped = (typ == 'CODE128'and re.match(r'^\d{4}[A-Za-z]$', data)and (data in MAPPINGS))
+
+                    if mapped:
+                        append_excel(ts, typ, data, label)  # label은 매핑된 이름
+
                     if beep and winsound:
                         try:
                             winsound.Beep(1000, 120)
@@ -157,6 +191,7 @@ def main(camera_index=0, beep=True, debug=False):
             key = cv2.waitKey(1) & 0xFF
             if key == ord('c'):  # c 키 → 스캔 기록 초기화
                 seen.clear()
+                reset_excel()
                 print("스캔 기록이 초기화되었습니다.")
             elif key == 27 or key == ord('q'):  # ESC 또는 q → 종료
                 break
