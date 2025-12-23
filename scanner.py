@@ -20,7 +20,7 @@ OpenCV와 pyzbar를 사용하는 바코드 스캐너 유틸리티.
     - `.vscode/settings.json` — `python.defaultInterpreterPath`와 (선택적으로) `Code Runner` 실행기 고정
     - `.vscode/launch.json` — Run/Debug 시 워크스페이스 인터프리터 사용
 
-현재 추가된 파일(워크스페이스 기준):
+현재 추가된 파일(워크스페이스 기준):c
 - `mappings.json` (바코드->표시 문자열 매핑)
 - `run_scanner.bat`, `run_scanner.ps1` (런처)
 - `.vscode/settings.json`, `.vscode/launch.json` (워크스페이스 실행 환경 고정)
@@ -155,9 +155,13 @@ def main(camera_index=0, beep=True, debug=False):
             # 화면에 표시 및 키 이벤트 처리
             cv2.imshow('Barcode Scanner', frame)
             key = cv2.waitKey(1) & 0xFF
-            if key == 27 or key == ord('q'):
+            if key == ord('c'):  # c 키 → 스캔 기록 초기화
+                seen.clear()
+                print("스캔 기록이 초기화되었습니다.")
+            elif key == 27 or key == ord('q'):  # ESC 또는 q → 종료
                 break
-    finally:
+
+    finally:    
         cap.release()
         cv2.destroyAllWindows()
 
